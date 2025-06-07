@@ -12,4 +12,5 @@ def make_request(instruction: str):
     return response.choices[0].message.content
 
 
-print(make_request("step by step guide to cook a dish called shakshuka"))
+if __name__ == "__main__":
+    print(make_request("Write a joke about artificial intelligence."))

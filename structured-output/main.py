@@ -23,4 +23,5 @@ def make_request(instruction: str):
     return response.choices[0].message.parsed
 
 
-print(make_request("Alice and Bob are going to a science fair on Friday."))
+if __name__ == "__main__":
+    print(make_request("Alice and Bob are going to a science fair on Friday."))

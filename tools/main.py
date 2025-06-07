@@ -32,5 +32,6 @@ def make_request(instruction: str):
         return None
 
 
-query = "What were the IBM stock prices on October 7, 2024?"
-print(make_request(query))
+if __name__ == "__main__":
+    query = "What were the IBM stock prices on October 7, 2024?"
+    print(make_request(query))
