@@ -7,6 +7,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 import logging
 from prompt import sum_prompt
+from duckduckgo_search import DDGS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,8 +24,8 @@ class SearchResult(BaseModel):
     """Model for individual search results"""
 
     title: str
-    url: str
-    snippet: str
+    href: str
+    body: str
 
 
 class AgenticSearchService:
@@ -69,7 +70,7 @@ class AgenticSearchService:
                     {
                         "role": "system",
                         "content": """You are a search engine expert with unmatched skill in finding the right keywords.
-                        From the user's question, extract 3-5 keywords that would be most effective for searching.
+                        From the user's question, extract 2-3 keywords that would be most effective for searching.
                         Focus on the core concepts, specific terms, and important context.
                         Avoid common words like 'what', 'how', 'the', etc.""",
                     },
@@ -153,54 +154,11 @@ class AgenticSearchService:
             return results
         except Exception as e:
             logger.error(f"Search failed: {e}")
-            return self._mock_search_results(search_query)
+            return []
 
     def _perform_search(self, query: str, num_results: int) -> List[Dict[str, Any]]:
-        """
-        Placeholder for actual search implementation
-        Replace this with your preferred search API
-        """
-        # Example for Google Custom Search API:
-        """
-        api_key = "YOUR_GOOGLE_API_KEY"
-        cx = "YOUR_SEARCH_ENGINE_ID"
-        url = f"https://www.googleapis.com/customsearch/v1?key={api_key}&cx={cx}&q={query}&num={num_results}"
-        
-        response = requests.get(url)
-        data = response.json()
-        
-        results = []
-        for item in data.get('items', []):
-            results.append({
-                'title': item.get('title', ''),
-                'url': item.get('link', ''),
-                'snippet': item.get('snippet', '')
-            })
+        results = DDGS().text(query, max_results=num_results)
         return results
-        """
-
-        # For now, return mock results
-        return self._mock_search_results(query)
-
-    def _mock_search_results(self, query: str) -> List[Dict[str, Any]]:
-        """Mock search results for testing purposes"""
-        return [
-            {
-                "title": f"Sample Result 1 for: {query}",
-                "url": "https://example1.com",
-                "snippet": "This is a sample search result snippet that would contain relevant information about the search query.",
-            },
-            {
-                "title": f"Sample Result 2 for: {query}",
-                "url": "https://example2.com",
-                "snippet": "Another sample search result with different information that might be useful for answering the user question.",
-            },
-            {
-                "title": f"Sample Result 3 for: {query}",
-                "url": "https://example3.com",
-                "snippet": "A third sample result providing additional context and information related to the search terms.",
-            },
-        ]
 
     def summarize_results(
         self, user_question: str, search_results: List[Dict[str, Any]]
@@ -221,7 +179,6 @@ class AgenticSearchService:
         # Create prompt for summarization
         prompt = sum_prompt.format(user_question=user_question, context=context)
 
-        print(prompt)
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -249,8 +206,8 @@ class AgenticSearchService:
             context_part = f"""
 Result {i}:
 Title: {result.get('title', 'N/A')}
-Source: {result.get('url', 'N/A')}
-Content: {result.get('snippet', 'N/A')}
+Source: {result.get('href', 'N/A')}
+Content: {result.get('body', 'N/A')}
 """
             context_parts.append(context_part)
 
@@ -295,10 +252,7 @@ def main():
 
     # Test questions
     test_questions = [
-        "What is the target blood pressure for healthy population?",
-        "How does artificial intelligence work in modern cars?",
-        "What are the latest developments in renewable energy?",
-        "Best practices for Python web development in 2024?",
+        "Who is the first human in space?"
     ]
 
     print("=== Agentic Search Service Demo ===\n")
